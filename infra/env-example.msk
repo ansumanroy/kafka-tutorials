@@ -1,0 +1,18 @@
+# Example MSK environment configuration
+# Copy this file to infra/env.msk and fill in your details.
+
+# Comma-separated list of bootstrap servers for your MSK cluster
+KAFKA_BOOTSTRAP_SERVERS="b-1.example-msk-cluster.amazonaws.com:9092,b-2.example-msk-cluster.amazonaws.com:9092"
+
+# Security configuration for MSK (adjust to your cluster setup)
+# Common options:
+#  - SASL/SCRAM
+#  - SASL/IAM (via AWS IAM authentication)
+#  - PLAINTEXT within a trusted network (not recommended for production)
+KAFKA_SECURITY_PROTOCOL="PLAINTEXT"
+KAFKA_SASL_MECHANISM=""
+KAFKA_SASL_USERNAME=""
+KAFKA_SASL_PASSWORD=""
+
+# Optional: extra client properties (passed through to kafka-* scripts if needed)
+KAFKA_ADDITIONAL_CONFIG=""

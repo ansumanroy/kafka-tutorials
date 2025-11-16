@@ -1,0 +1,13 @@
+# Example local Kafka environment configuration (Docker Compose)
+# Copy this file to infra/env.local and adjust if needed.
+
+# Local bootstrap servers (from docker-compose.kafka.yml)
+KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
+
+# Local stack usually runs with PLAINTEXT
+KAFKA_SECURITY_PROTOCOL="PLAINTEXT"
+KAFKA_SASL_MECHANISM=""
+KAFKA_SASL_USERNAME=""
+KAFKA_SASL_PASSWORD=""
+
+KAFKA_ADDITIONAL_CONFIG=""
