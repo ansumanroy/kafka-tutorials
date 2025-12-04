@@ -21,6 +21,7 @@ The audience is developers comfortable with Linux and the command line but **new
 - `python/` – Future Python examples mirroring Bash chapters.
 - `java/` – Future Java examples mirroring Bash chapters.
 - `TEACHING_GUIDE.md` – Suggestions for structuring teaching sessions with this repo.
+- `ADVANCED_PRODUCERS.md` – Best practices and advanced patterns for Kafka producers.
 
 ---
 
@@ -97,6 +98,8 @@ Then continue through the chapters in order.
 Each chapter directory contains a `README.md` explaining the concepts and one or more scripts you can run directly.
 
 For suggested **multi-session teaching flows**, see `TEACHING_GUIDE.md`.
+
+For **advanced producer concepts** and best practices, see `ADVANCED_PRODUCERS.md`.
 
 ---
 
