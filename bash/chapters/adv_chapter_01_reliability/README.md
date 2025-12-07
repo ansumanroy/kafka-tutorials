@@ -280,7 +280,47 @@ compression.type=none
 
 ## Testing Reliability
 
-### Scenario 1: Network Blip
+We provide two automated test scripts in this chapter:
+
+### Automated Test Suite
+
+Run the comprehensive reliability test suite:
+
+```bash
+# Run with default settings (10 messages per test)
+bash/chapters/adv_chapter_01_reliability/test_reliability.sh
+
+# Or specify custom topic and message count
+bash/chapters/adv_chapter_01_reliability/test_reliability.sh my-test-topic 20
+```
+
+This script tests:
+- ✓ Different acks levels (1 and all)
+- ✓ Idempotence enabled and verified
+- ✓ Retry configuration
+- ✓ Message ordering with keys
+- ✓ Topic health and partition distribution
+- ✓ Message count verification
+
+### Failure Simulation
+
+Run scenarios that demonstrate failure handling:
+
+```bash
+bash/chapters/adv_chapter_01_reliability/simulate_failure.sh
+
+# Or with custom topic
+bash/chapters/adv_chapter_01_reliability/simulate_failure.sh my-failure-test
+```
+
+This script simulates:
+- Short timeouts and their effects
+- Aggressive retry behavior
+- Fire-and-forget mode (acks=0) risks
+
+### Manual Testing Scenarios
+
+#### Scenario 1: Network Blip
 
 ```bash
 # Send messages
@@ -290,7 +330,7 @@ bash/chapters/03-producer-console/send_batch_messages.sh reliable-topic 100
 # Then observe producer retries and eventual success
 ```
 
-### Scenario 2: Broker Restart
+#### Scenario 2: Broker Restart
 
 ```bash
 # Start producing
@@ -302,7 +342,7 @@ docker restart kafka-tutorials-kafka-1
 # Observe producer handles leader election and continues
 ```
 
-### Scenario 3: Verify No Duplicates
+#### Scenario 3: Verify No Duplicates
 
 ```bash
 # Produce with idempotence

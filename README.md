@@ -82,6 +82,41 @@ Then continue through the chapters in order.
 
 ---
 
+## Makefile Targets
+
+The repository includes a `Makefile` with convenient targets for running tests across Python and Java:
+
+### Quick Reference
+
+```bash
+# Show all available targets
+make help
+
+# Python targets
+make python-env                    # Create Python virtual environment
+make python-check-connection       # Run Python connectivity check
+
+# Java targets
+make java-reliability-build        # Build Java reliability tests
+make java-reliability-test         # Run all Java reliability tests
+make java-reliability-integration  # Run only integration tests
+make java-reliability-failure      # Run only failure simulation tests
+make java-reliability-clean        # Clean Java build artifacts
+
+# Run everything
+make test-all                      # Run all tests (Python + Java)
+make clean-all                     # Clean all build artifacts
+```
+
+**Note**: Always source your environment file before running tests:
+
+```bash
+source infra/env.msk  # or infra/env.local
+make java-reliability-test
+```
+
+---
+
 ## Chapter Index (Bash)
 
 | #  | Chapter                                   | Folder                                      |
