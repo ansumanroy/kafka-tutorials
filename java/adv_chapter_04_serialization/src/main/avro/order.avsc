@@ -1,0 +1,53 @@
+{
+  "namespace": "com.kafkatutorials.serialization.avro",
+  "type": "record",
+  "name": "Order",
+  "doc": "Order event schema",
+  "fields": [
+    {
+      "name": "orderId",
+      "type": "string",
+      "doc": "Unique order identifier"
+    },
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "User who placed the order"
+    },
+    {
+      "name": "items",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "OrderItem",
+          "fields": [
+            {
+              "name": "productId",
+              "type": "string"
+            },
+            {
+              "name": "quantity",
+              "type": "int"
+            },
+            {
+              "name": "price",
+              "type": "double"
+            }
+          ]
+        }
+      },
+      "doc": "List of order items"
+    },
+    {
+      "name": "totalAmount",
+      "type": "double",
+      "doc": "Total order amount"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Order timestamp"
+    }
+  ]
+}

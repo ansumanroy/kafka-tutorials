@@ -1,0 +1,103 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.kafkatutorials'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Kafka clients
+    implementation 'org.apache.kafka:kafka-clients:3.6.1'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    
+    // JSON processing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Pass environment variables to tests
+    systemProperty 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS')
+    systemProperty 'KAFKA_SECURITY_PROTOCOL', System.getenv('KAFKA_SECURITY_PROTOCOL')
+    systemProperty 'KAFKA_SASL_MECHANISM', System.getenv('KAFKA_SASL_MECHANISM')
+    systemProperty 'KAFKA_SASL_USERNAME', System.getenv('KAFKA_SASL_USERNAME')
+    systemProperty 'KAFKA_SASL_PASSWORD', System.getenv('KAFKA_SASL_PASSWORD')
+    
+    // Increase timeout for distribution analysis
+    systemProperty 'junit.jupiter.execution.timeout.default', '10m'
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    mainClass = 'com.kafkatutorials.partitioning.PartitioningDemo'
+}
+
+tasks.register('runPartitioningDemo', JavaExec) {
+    description = 'Run partitioning demonstration'
+    group = 'application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.partitioning.PartitioningDemo'
+    
+    environment 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+}
+
+tasks.register('runPartitioningTests', Test) {
+    description = 'Run partitioning behavior tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'partitioning'
+    }
+}
+
+tasks.register('runHotPartitionTests', Test) {
+    description = 'Run hot partition tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'hot-partition'
+    }
+}
+
+tasks.register('runDistributionTests', Test) {
+    description = 'Run distribution analysis tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'distribution'
+    }
+}
+
+tasks.register('runAllPartitioningTests', Test) {
+    description = 'Run all partitioning-related tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'partitioning | hot-partition | distribution'
+    }
+}

@@ -1,0 +1,110 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.davidmc24.gradle.plugin.avro' version '1.9.1'
+}
+
+group = 'com.kafkatutorials'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://packages.confluent.io/maven/'
+    }
+}
+
+dependencies {
+    // Kafka clients
+    implementation 'org.apache.kafka:kafka-clients:3.6.1'
+    
+    // Avro
+    implementation 'org.apache.avro:avro:1.11.3'
+    
+    // Schema Registry (Confluent/Redpanda compatible)
+    implementation 'io.confluent:kafka-avro-serializer:7.5.1'
+    implementation 'io.confluent:kafka-schema-registry-client:7.5.1'
+    implementation 'io.confluent:kafka-json-serializer:7.5.1'
+    
+    // JSON processing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Pass environment variables
+    systemProperty 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS')
+    systemProperty 'SCHEMA_REGISTRY_URL', System.getenv('SCHEMA_REGISTRY_URL') ?: 'http://localhost:8081'
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+// Avro plugin configuration
+avro {
+    createSetters = true
+    fieldVisibility = 'PRIVATE'
+    outputCharacterEncoding = 'UTF-8'
+    stringType = 'String'
+}
+
+application {
+    mainClass = 'com.kafkatutorials.serialization.SerializationDemo'
+}
+
+tasks.register('runSerializationDemo', JavaExec) {
+    description = 'Run serialization demonstration'
+    group = 'application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.serialization.SerializationDemo'
+    
+    environment 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+    environment 'SCHEMA_REGISTRY_URL', System.getenv('SCHEMA_REGISTRY_URL') ?: 'http://localhost:8081'
+}
+
+tasks.register('runFormatTests', Test) {
+    description = 'Run format comparison tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'formats'
+    }
+}
+
+tasks.register('runSchemaTests', Test) {
+    description = 'Run schema evolution tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'schema'
+    }
+}
+
+tasks.register('runAvroTests', Test) {
+    description = 'Run Avro serialization tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'avro'
+    }
+}

@@ -1,0 +1,33 @@
+{
+  "namespace": "com.kafkatutorials.serialization.avro",
+  "type": "record",
+  "name": "UserV3",
+  "doc": "User event schema - Version 3 (Forward compatible - field with default)",
+  "fields": [
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "Unique user identifier"
+    },
+    {
+      "name": "username",
+      "type": "string",
+      "doc": "User's username"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Event timestamp in epoch milliseconds"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "UserStatus",
+        "symbols": ["ACTIVE", "INACTIVE", "SUSPENDED"]
+      },
+      "default": "ACTIVE",
+      "doc": "User status - NEW FIELD in V3"
+    }
+  ]
+}

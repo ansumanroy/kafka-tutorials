@@ -1,0 +1,65 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.kafkatutorials'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Kafka clients
+    implementation 'org.apache.kafka:kafka-clients:3.6.1'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Pass environment variables to tests
+    systemProperty 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS')
+    systemProperty 'KAFKA_SECURITY_PROTOCOL', System.getenv('KAFKA_SECURITY_PROTOCOL')
+    systemProperty 'KAFKA_SASL_MECHANISM', System.getenv('KAFKA_SASL_MECHANISM')
+    systemProperty 'KAFKA_SASL_USERNAME', System.getenv('KAFKA_SASL_USERNAME')
+    systemProperty 'KAFKA_SASL_PASSWORD', System.getenv('KAFKA_SASL_PASSWORD')
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.register('runReliabilityTests', Test) {
+    description = 'Run reliability integration tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'reliability'
+    }
+}
+
+tasks.register('runFailureTests', Test) {
+    description = 'Run failure simulation tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'failure-simulation'
+    }
+}
+

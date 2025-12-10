@@ -1,0 +1,34 @@
+{
+  "namespace": "com.kafkatutorials.serialization.avro",
+  "type": "record",
+  "name": "UserV2",
+  "doc": "User event schema - Version 2 (Backward compatible - added optional field)",
+  "fields": [
+    {
+      "name": "userId",
+      "type": "string",
+      "doc": "Unique user identifier"
+    },
+    {
+      "name": "username",
+      "type": "string",
+      "doc": "User's username"
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "doc": "User's email address"
+    },
+    {
+      "name": "timestamp",
+      "type": "long",
+      "doc": "Event timestamp in epoch milliseconds"
+    },
+    {
+      "name": "phoneNumber",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Optional phone number - NEW FIELD in V2"
+    }
+  ]
+}

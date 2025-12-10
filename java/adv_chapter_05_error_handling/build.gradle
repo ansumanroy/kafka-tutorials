@@ -1,0 +1,114 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.kafkatutorials'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Kafka clients
+    implementation 'org.apache.kafka:kafka-clients:3.6.1'
+    
+    // JSON processing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+    
+    // Micrometer for metrics
+    implementation 'io.micrometer:micrometer-core:1.12.0'
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.12.0'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.14'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testImplementation 'org.mockito:mockito-core:5.8.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.8.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Pass environment variables
+    systemProperty 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS')
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    mainClass = 'com.kafkatutorials.errorhandling.ErrorHandlingDemo'
+}
+
+tasks.register('runErrorDemo', JavaExec) {
+    description = 'Run error handling demonstration'
+    group = 'application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.errorhandling.ErrorHandlingDemo'
+    
+    environment 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+}
+
+tasks.register('runDlqDemo', JavaExec) {
+    description = 'Run Dead Letter Queue demonstration'
+    group = 'application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.errorhandling.DeadLetterQueueDemo'
+    
+    environment 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+}
+
+tasks.register('runMetricsDemo', JavaExec) {
+    description = 'Run metrics collection demonstration'
+    group = 'application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.errorhandling.MetricsDemo'
+    
+    environment 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+}
+
+tasks.register('runErrorTests', Test) {
+    description = 'Run error handling tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'error-handling'
+    }
+}
+
+tasks.register('runDlqTests', Test) {
+    description = 'Run DLQ tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'dlq'
+    }
+}
+
+tasks.register('runMetricsTests', Test) {
+    description = 'Run metrics tests'
+    group = 'verification'
+    
+    useJUnitPlatform {
+        includeTags 'metrics'
+    }
+}
