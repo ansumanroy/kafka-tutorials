@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Extends the base kafka setup
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.29.0
+    container_name: kafka-tutorials-ksqldb-server
+    depends_on:
+      - kafka
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: kafka:9092
+      KSQL_KSQL_SERVICE_ID: kafka_tutorials_ksqldb_
+      KSQL_KSQL_QUERIES_FILE: /opt/ksqldb/queries.sql
+      KSQL_KSQL_EXTENSION_DIR: /opt/ksqldb-udfs
+      
+      # Processing guarantee
+      KSQL_KSQL_STREAMS_PROCESSING_GUARANTEE: exactly_once_v2
+      
+      # Logging
+      KSQL_LOG4J_ROOT_LOGLEVEL: INFO
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+    volumes:
+      - ./ksql-scripts:/opt/ksqldb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kafka-network
+
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.29.0
+    container_name: kafka-tutorials-ksqldb-cli
+    depends_on:
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
+    networks:
+      - kafka-network
+
+networks:
+  kafka-network:
+    external: true
+    name: kafka-tutorials_default

@@ -1,0 +1,65 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.kafkatutorials.streams'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://packages.confluent.io/maven/'
+    }
+}
+
+dependencies {
+    // Kafka Streams
+    implementation 'org.apache.kafka:kafka-streams:3.6.1'
+    implementation 'org.apache.kafka:kafka-clients:3.6.1'
+    
+    // Streams test utilities
+    testImplementation 'org.apache.kafka:kafka-streams-test-utils:3.6.1'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    
+    // Pass environment variables to tests
+    systemProperty 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    mainClass = 'com.kafkatutorials.streams.introduction.StreamsBasics'
+}
+
+tasks.register('runWordCount', JavaExec) {
+    description = 'Run word count streams application'
+    group = 'application'
+    
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.streams.introduction.StreamsBasics'
+    
+    // Pass environment variables
+    environment 'KAFKA_BOOTSTRAP_SERVERS', System.getenv('KAFKA_BOOTSTRAP_SERVERS') ?: 'localhost:9092'
+}

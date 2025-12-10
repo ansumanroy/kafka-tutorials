@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.kafkatutorials.streams'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://packages.confluent.io/maven/'
+    }
+}
+
+dependencies {
+    // HTTP client (call ksqlDB REST API directly)
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+
+    // JSON processing
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    mainClass = 'com.kafkatutorials.streams.ksqldb.KsqlDbClient'
+}
+
+tasks.register('runKsqlClient', JavaExec) {
+    description = 'Run ksqlDB Java client demo'
+    group = 'application'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.kafkatutorials.streams.ksqldb.KsqlDbClient'
+    environment 'KSQLDB_URL', System.getenv('KSQLDB_URL') ?: 'http://localhost:8088'
+}
