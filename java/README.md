@@ -43,6 +43,27 @@ make java-performance-test         # Run all tests
 
 ---
 
+### Advanced Chapter 03: Keys, Partitioning, and Ordering ✅
+**Location:** `adv_chapter_03_partitioning/`
+
+**Topics Covered:**
+- Message keys and partition routing
+- Ordering guarantees (within partition vs cross-partition)
+- Hot partition problem (celebrity effect)
+- Composite key solution for load distribution
+- Partition distribution analysis
+
+**Quick Start:**
+```bash
+make java-partitioning-build
+make java-partitioning-demo        # Run demonstration
+make java-partitioning-test        # Run all tests
+```
+
+**See:** [adv_chapter_03_partitioning/README.md](adv_chapter_03_partitioning/README.md)
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -98,6 +119,17 @@ make java-performance-benchmark      # Standalone benchmark
 make java-performance-tests-only     # Perf tests only
 make java-performance-compression    # Compression tests
 make java-performance-clean          # Clean artifacts
+```
+
+### Chapter 03: Partitioning
+
+```bash
+make java-partitioning-build         # Build
+make java-partitioning-test          # Run all tests
+make java-partitioning-demo          # Run demonstration
+make java-partitioning-behavior      # Behavior tests
+make java-partitioning-hotpartition  # Hot partition tests
+make java-partitioning-clean         # Clean artifacts
 ```
 
 ## 📁 Project Structure
@@ -294,7 +326,6 @@ systemProperty 'junit.jupiter.execution.timeout.default', '15m'
 ## 🎓 Planned Chapters
 
 Future chapters will include:
-- Chapter 03: Keys, Partitioning, and Ordering
 - Chapter 04: Serialization & Schema Management
 - Chapter 05: Error Handling & Observability
 - Chapter 06: Operational Concerns

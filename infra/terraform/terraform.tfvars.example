@@ -1,0 +1,37 @@
+# Example Terraform variables file
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_region = "us-east-1"
+stack_name = "kafka-dev-image-builder"
+
+# Network Configuration (REQUIRED)
+vpc_id            = "vpc-xxxxxxxxxxxxxxxxx"
+subnet_id         = "subnet-xxxxxxxxxxxxxxxxx"
+security_group_id = "sg-xxxxxxxxxxxxxxxxx"
+
+# Instance Configuration
+instance_type = "t3.medium"
+
+# Distribution Configuration
+target_regions = []  # Additional regions to copy AMI to, e.g., ["us-west-2", "eu-west-1"]
+ami_user_ids   = []  # AWS account IDs to share AMI with
+
+# Notification Configuration (Optional)
+notification_email = ""  # e.g., "your-email@example.com"
+
+# Base Image
+# Update this AMI ID for your region
+# To find latest Amazon Linux 2 AMI:
+# aws ec2 describe-images --owners amazon --filters "Name=name,Values=amzn2-ami-hvm-*-x86_64-gp2" --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text
+base_image_id = "ami-0c02fb55b7c22fdef"
+
+# Component Version
+component_version = "1.0.0"
+
+# Additional Tags (Optional)
+tags = {
+  Project     = "KafkaTutorials"
+  ManagedBy   = "Terraform"
+  Environment = "Development"
+}

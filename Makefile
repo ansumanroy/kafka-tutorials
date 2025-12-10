@@ -2,6 +2,9 @@ PYTHON_ENV ?= .venv
 PYTHON ?= python3
 JAVA_ADV_RELIABILITY_DIR = java/adv_chapter_01_reliability
 JAVA_ADV_PERFORMANCE_DIR = java/adv_chapter_02_performance
+JAVA_ADV_PARTITIONING_DIR = java/adv_chapter_03_partitioning
+JAVA_ADV_SERIALIZATION_DIR = java/adv_chapter_04_serialization
+JAVA_ADV_ERROR_HANDLING_DIR = java/adv_chapter_05_error_handling
 
 # Default target when running 'make' without arguments
 .DEFAULT_GOAL := help
@@ -96,6 +99,133 @@ java-performance-compression:
 java-performance-clean:
 	@echo "Cleaning Java performance build artifacts..."
 	cd $(JAVA_ADV_PERFORMANCE_DIR) && gradle clean
+
+# Chapter 03: Partitioning
+.PHONY: java-partitioning-build
+java-partitioning-build:
+	@echo "Building Java partitioning tests..."
+	cd $(JAVA_ADV_PARTITIONING_DIR) && gradle build -x test
+
+.PHONY: java-partitioning-test
+java-partitioning-test:
+	@echo "Running all Java partitioning tests..."
+	@echo "Make sure to source infra/env.local first!"
+	@if [ ! -f infra/env.local ]; then \
+		echo "Creating env.local..."; \
+		cp infra/env-example.local infra/env.local; \
+	fi
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_PARTITIONING_DIR) && gradle test'
+
+.PHONY: java-partitioning-demo
+java-partitioning-demo:
+	@echo "Running Java partitioning demonstration..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_PARTITIONING_DIR) && gradle runPartitioningDemo'
+
+.PHONY: java-partitioning-behavior
+java-partitioning-behavior:
+	@echo "Running Java partitioning behavior tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_PARTITIONING_DIR) && gradle runPartitioningTests'
+
+.PHONY: java-partitioning-hotpartition
+java-partitioning-hotpartition:
+	@echo "Running Java hot partition tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_PARTITIONING_DIR) && gradle runHotPartitionTests'
+
+.PHONY: java-partitioning-clean
+java-partitioning-clean:
+	@echo "Cleaning Java partitioning build artifacts..."
+	cd $(JAVA_ADV_PARTITIONING_DIR) && gradle clean
+
+# Chapter 04: Serialization
+.PHONY: java-serialization-build
+java-serialization-build:
+	@echo "Building Java serialization tests (includes Avro code generation)..."
+	cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle build -x test
+
+.PHONY: java-serialization-test
+java-serialization-test:
+	@echo "Running all Java serialization tests..."
+	@echo "Make sure Schema Registry is running (make kafka-start)!"
+	@if [ ! -f infra/env.local ]; then \
+		echo "Creating env.local..."; \
+		cp infra/env-example.local infra/env.local; \
+	fi
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle test'
+
+.PHONY: java-serialization-demo
+java-serialization-demo:
+	@echo "Running Java serialization demonstration..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle runSerializationDemo'
+
+.PHONY: java-serialization-formats
+java-serialization-formats:
+	@echo "Running Java format comparison tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle runFormatTests'
+
+.PHONY: java-serialization-schema
+java-serialization-schema:
+	@echo "Running Java schema evolution tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle runSchemaTests'
+
+.PHONY: java-serialization-avro
+java-serialization-avro:
+	@echo "Running Java Avro serialization tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle runAvroTests'
+
+.PHONY: java-serialization-clean
+java-serialization-clean:
+	@echo "Cleaning Java serialization build artifacts..."
+	cd $(JAVA_ADV_SERIALIZATION_DIR) && gradle clean
+
+# Chapter 05: Error Handling & Observability
+.PHONY: java-errorhandling-build
+java-errorhandling-build:
+	@echo "Building Java error handling tests..."
+	cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle build -x test
+
+.PHONY: java-errorhandling-test
+java-errorhandling-test:
+	@echo "Running all Java error handling tests..."
+	@if [ ! -f infra/env.local ]; then \
+		echo "Creating env.local..."; \
+		cp infra/env-example.local infra/env.local; \
+	fi
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle test'
+
+.PHONY: java-errorhandling-demo
+java-errorhandling-demo:
+	@echo "Running Java error handling demonstration..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle runErrorDemo'
+
+.PHONY: java-errorhandling-dlq
+java-errorhandling-dlq:
+	@echo "Running Java Dead Letter Queue demonstration..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle runDlqDemo'
+
+.PHONY: java-errorhandling-metrics
+java-errorhandling-metrics:
+	@echo "Running Java metrics demonstration..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle runMetricsDemo'
+
+.PHONY: java-errorhandling-error-tests
+java-errorhandling-error-tests:
+	@echo "Running Java error handling tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle runErrorTests'
+
+.PHONY: java-errorhandling-dlq-tests
+java-errorhandling-dlq-tests:
+	@echo "Running Java DLQ tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle runDlqTests'
+
+.PHONY: java-errorhandling-metrics-tests
+java-errorhandling-metrics-tests:
+	@echo "Running Java metrics tests..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle runMetricsTests'
+
+.PHONY: java-errorhandling-clean
+java-errorhandling-clean:
+	@echo "Cleaning Java error handling build artifacts..."
+	cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle clean
 
 # ==========================================
 # Kafka Cluster Management (Docker)
@@ -419,6 +549,34 @@ help:
 	@echo "  make java-performance-tests-only - Run performance benchmark tests only"
 	@echo "  make java-performance-compression - Run compression comparison tests"
 	@echo "  make java-performance-clean      - Clean performance build artifacts"
+	@echo ""
+	@echo "☕ Java Targets (Chapter 03 - Partitioning):"
+	@echo "  make java-partitioning-build     - Build Java partitioning tests"
+	@echo "  make java-partitioning-test      - Run all Java partitioning tests"
+	@echo "  make java-partitioning-demo      - Run partitioning demonstration"
+	@echo "  make java-partitioning-behavior  - Run partitioning behavior tests"
+	@echo "  make java-partitioning-hotpartition - Run hot partition tests"
+	@echo "  make java-partitioning-clean     - Clean partitioning build artifacts"
+	@echo ""
+	@echo "☕ Java Targets (Chapter 04 - Serialization):"
+	@echo "  make java-serialization-build    - Build + generate Avro classes"
+	@echo "  make java-serialization-test     - Run all Java serialization tests"
+	@echo "  make java-serialization-demo     - Run serialization demonstration"
+	@echo "  make java-serialization-formats  - Run format comparison tests"
+	@echo "  make java-serialization-schema   - Run schema evolution tests"
+	@echo "  make java-serialization-avro     - Run Avro serialization tests"
+	@echo "  make java-serialization-clean    - Clean serialization build artifacts"
+	@echo ""
+	@echo "☕ Java Targets (Chapter 05 - Error Handling):"
+	@echo "  make java-errorhandling-build    - Build Java error handling tests"
+	@echo "  make java-errorhandling-test     - Run all Java error handling tests"
+	@echo "  make java-errorhandling-demo     - Run error handling demonstration"
+	@echo "  make java-errorhandling-dlq      - Run DLQ demonstration"
+	@echo "  make java-errorhandling-metrics  - Run metrics demonstration"
+	@echo "  make java-errorhandling-error-tests    - Run error handling tests"
+	@echo "  make java-errorhandling-dlq-tests      - Run DLQ tests"
+	@echo "  make java-errorhandling-metrics-tests  - Run metrics tests"
+	@echo "  make java-errorhandling-clean    - Clean error handling build artifacts"
 	@echo ""
 	@echo "🛠️  Utility Targets:"
 	@echo "  make test-connection             - Test Kafka connection"
