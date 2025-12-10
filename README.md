@@ -28,17 +28,31 @@ open http://localhost:8080
 
 ## Repository Structure
 
-- `bash/` – Bash-based tutorial chapters (current focus).
+- `bash/` – Bash-based tutorial chapters for producers/consumers.
   - `bash/common/` – Shared helpers (env loading, logging).
   - `bash/chapters/` – One folder per chapter.
+- `java/` – Java examples for advanced producer patterns.
+  - `java/adv_chapter_XX/` – Advanced topics (reliability, performance, etc.)
+- `streams/` – **Kafka Streams tutorials (Java)** ✨ NEW!
+  - `streams/chapter_01_introduction/` – Streams basics, word count
+  - `streams/chapter_02_kstream_basics/` – Stateless operations
+  - `streams/chapter_03_ktable/` – Stateful processing, KTable
+  - `streams/chapter_04_joins/` – Stream-stream, stream-table joins
+  - `streams/chapter_05_windowing/` – Time-based windows
+  - `streams/chapter_06_aggregations/` – count, reduce, aggregate
+  - `streams/chapter_07_state_stores/` – State management
+  - `streams/chapter_08_topology/` – Design and testing
+  - `streams/chapter_09_exactly_once/` – EOS semantics
+  - `streams/chapter_10_ksqldb/` – KSQL/ksqlDB integration
 - `infra/` – Environment setup.
-  - `infra/docker-compose.kafka.yml` – Local Kafka + Zookeeper stack.
+  - `infra/docker-compose-apache.yml` – Apache Kafka + KRaft mode.
   - `infra/env-example.msk` – Example MSK environment file.
   - `infra/env-example.local` – Example local Docker Kafka environment file.
-- `python/` – Future Python examples mirroring Bash chapters.
-- `java/` – Future Java examples mirroring Bash chapters.
+- `python/` – Python examples.
 - `TEACHING_GUIDE.md` – Suggestions for structuring teaching sessions with this repo.
 - `ADVANCED_PRODUCERS.md` – Best practices and advanced patterns for Kafka producers.
+- `SLIDES.md` – Presentation deck for producer tutorials.
+- `streams/STREAMS_SLIDES.md` – Presentation deck for Streams tutorials.
 
 ---
 
@@ -155,7 +169,87 @@ For **advanced producer concepts** and best practices, see `ADVANCED_PRODUCERS.m
 
 ---
 
-## Future: Python and Java
+## 🌊 Kafka Streams (Java)
+
+**NEW!** Comprehensive Kafka Streams tutorials from basics to production.
+
+### Quick Start
+
+```bash
+# Start Kafka
+make kafka-apache-start
+
+# Run word count example
+cd streams/chapter_01_introduction
+gradle runWordCount
+
+# Or via Makefile
+make streams-ch01-demo
+```
+
+### Chapters Overview
+
+| # | Chapter | Key Topics |
+|---|---------|-----------|
+| 01 | [Introduction](streams/chapter_01_introduction/) | Streams API, KStream vs KTable, Topology |
+| 02 | [KStream Basics](streams/chapter_02_kstream_basics/) | filter, map, flatMap, branch |
+| 03 | [KTable](streams/chapter_03_ktable/) | Stateful processing, GlobalKTable |
+| 04 | [Joins](streams/chapter_04_joins/) | Stream-stream, stream-table, table-table |
+| 05 | [Windowing](streams/chapter_05_windowing/) | Tumbling, hopping, session windows |
+| 06 | [Aggregations](streams/chapter_06_aggregations/) | count, reduce, aggregate |
+| 07 | [State Stores](streams/chapter_07_state_stores/) | RocksDB, persistence, queries |
+| 08 | [Topology Design](streams/chapter_08_topology/) | Testing, optimization |
+| 09 | [Exactly-Once](streams/chapter_09_exactly_once/) | EOS v2, transactions |
+| 10 | [KSQL/ksqlDB](streams/chapter_10_ksqldb/) | SQL interface, REST API |
+
+### Features
+
+- ✅ **10 comprehensive chapters** covering basics to production
+- ✅ **Working Java code** with unit tests
+- ✅ **TopologyTestDriver** for fast testing
+- ✅ **Docker setup** for ksqlDB
+- ✅ **Makefile targets** for easy execution
+- ✅ **Presentation slides** ([STREAMS_SLIDES.md](streams/STREAMS_SLIDES.md))
+
+### Quick Commands
+
+```bash
+# Build all streams chapters
+make streams-build-all
+
+# Test all streams chapters
+make streams-test-all
+
+# Run individual demos
+make streams-ch01-demo  # Word count
+make streams-ch02-filter # Filter/map
+make streams-ch03-demo  # KTable
+make streams-ch04-stream # Joins
+make streams-ch06-demo  # Aggregations
+
+# Start ksqlDB
+make ksqldb-start
+make ksqldb-cli
+```
+
+**See [streams/README.md](streams/README.md) for complete documentation.**
+
+---
+
+## Java Producer Examples
+
+The `java/` directory contains Java implementations for advanced producer patterns:
+
+- ✅ **Reliability** (acks, retries, idempotence)
+- ✅ **Performance** (throughput, compression)
+- ✅ **Partitioning** (custom partitioners, hot partitions)
+- ✅ **Serialization** (Avro, Schema Registry)
+- ✅ **Error Handling** (DLQ, metrics, retry logic)
+- ✅ **Circuit Breaker** (fault tolerance pattern)
+
+---
+
+## Future: Python Examples
 
 The `python/` and `java/` directories will eventually contain **equivalent examples** using Kafka client libraries:
 

@@ -7,6 +7,18 @@ JAVA_ADV_SERIALIZATION_DIR = java/adv_chapter_04_serialization
 JAVA_ADV_ERROR_HANDLING_DIR = java/adv_chapter_05_error_handling
 JAVA_ADV_CIRCUIT_BREAKER_DIR = java/adv_chapter_07_circuit_breaker
 
+# Kafka Streams chapter directories
+STREAMS_CH01_DIR = streams/chapter_01_introduction
+STREAMS_CH02_DIR = streams/chapter_02_kstream_basics
+STREAMS_CH03_DIR = streams/chapter_03_ktable
+STREAMS_CH04_DIR = streams/chapter_04_joins
+STREAMS_CH05_DIR = streams/chapter_05_windowing
+STREAMS_CH06_DIR = streams/chapter_06_aggregations
+STREAMS_CH07_DIR = streams/chapter_07_state_stores
+STREAMS_CH08_DIR = streams/chapter_08_topology
+STREAMS_CH09_DIR = streams/chapter_09_exactly_once
+STREAMS_CH10_DIR = streams/chapter_10_ksqldb
+
 # Default target when running 'make' without arguments
 .DEFAULT_GOAL := help
 
@@ -324,6 +336,250 @@ kafka-logs-schema-registry:
 .PHONY: kafka-restart
 kafka-restart: kafka-stop kafka-start
 
+# ==========================================
+# Kafka Streams Targets
+# ==========================================
+
+# Chapter 01: Introduction
+.PHONY: streams-ch01-build streams-ch01-test streams-ch01-demo streams-ch01-clean
+streams-ch01-build:
+	@echo "Building Streams Chapter 01..."
+	cd $(STREAMS_CH01_DIR) && gradle build -x test
+
+streams-ch01-test:
+	@echo "Testing Streams Chapter 01..."
+	cd $(STREAMS_CH01_DIR) && gradle test
+
+streams-ch01-demo:
+	@echo "Running Streams Chapter 01 demo..."
+	cd $(STREAMS_CH01_DIR) && gradle runWordCount
+
+streams-ch01-clean:
+	cd $(STREAMS_CH01_DIR) && gradle clean
+
+# Chapter 02: KStream Basics
+.PHONY: streams-ch02-build streams-ch02-test streams-ch02-filter streams-ch02-branch streams-ch02-clean
+streams-ch02-build:
+	@echo "Building Streams Chapter 02..."
+	cd $(STREAMS_CH02_DIR) && gradle build -x test
+
+streams-ch02-test:
+	@echo "Testing Streams Chapter 02..."
+	cd $(STREAMS_CH02_DIR) && gradle test
+
+streams-ch02-filter:
+	@echo "Running filter/map demo..."
+	cd $(STREAMS_CH02_DIR) && gradle runFilterMap
+
+streams-ch02-branch:
+	@echo "Running branching demo..."
+	cd $(STREAMS_CH02_DIR) && gradle runBranching
+
+streams-ch02-clean:
+	cd $(STREAMS_CH02_DIR) && gradle clean
+
+# Chapter 03: KTable
+.PHONY: streams-ch03-build streams-ch03-test streams-ch03-demo streams-ch03-global streams-ch03-clean
+streams-ch03-build:
+	@echo "Building Streams Chapter 03..."
+	cd $(STREAMS_CH03_DIR) && gradle build -x test
+
+streams-ch03-test:
+	@echo "Testing Streams Chapter 03..."
+	cd $(STREAMS_CH03_DIR) && gradle test
+
+streams-ch03-demo:
+	@echo "Running KTable demo..."
+	cd $(STREAMS_CH03_DIR) && gradle runKTable
+
+streams-ch03-global:
+	@echo "Running GlobalKTable demo..."
+	cd $(STREAMS_CH03_DIR) && gradle runGlobalKTable
+
+streams-ch03-clean:
+	cd $(STREAMS_CH03_DIR) && gradle clean
+
+# Chapter 04: Joins
+.PHONY: streams-ch04-build streams-ch04-test streams-ch04-stream streams-ch04-table streams-ch04-clean
+streams-ch04-build:
+	@echo "Building Streams Chapter 04..."
+	cd $(STREAMS_CH04_DIR) && gradle build -x test
+
+streams-ch04-test:
+	@echo "Testing Streams Chapter 04..."
+	cd $(STREAMS_CH04_DIR) && gradle test
+
+streams-ch04-stream:
+	@echo "Running stream-stream join demo..."
+	cd $(STREAMS_CH04_DIR) && gradle runStreamJoin
+
+streams-ch04-table:
+	@echo "Running stream-table join demo..."
+	cd $(STREAMS_CH04_DIR) && gradle runTableJoin
+
+streams-ch04-clean:
+	cd $(STREAMS_CH04_DIR) && gradle clean
+
+# Chapter 05: Windowing
+.PHONY: streams-ch05-build streams-ch05-test streams-ch05-demo streams-ch05-clean
+streams-ch05-build:
+	@echo "Building Streams Chapter 05..."
+	cd $(STREAMS_CH05_DIR) && gradle build -x test
+
+streams-ch05-test:
+	@echo "Testing Streams Chapter 05..."
+	cd $(STREAMS_CH05_DIR) && gradle test
+
+streams-ch05-demo:
+	@echo "Running windowing demo..."
+	cd $(STREAMS_CH05_DIR) && gradle run
+
+streams-ch05-clean:
+	cd $(STREAMS_CH05_DIR) && gradle clean
+
+# Chapter 06: Aggregations
+.PHONY: streams-ch06-build streams-ch06-test streams-ch06-demo streams-ch06-clean
+streams-ch06-build:
+	@echo "Building Streams Chapter 06..."
+	cd $(STREAMS_CH06_DIR) && gradle build -x test
+
+streams-ch06-test:
+	@echo "Testing Streams Chapter 06..."
+	cd $(STREAMS_CH06_DIR) && gradle test
+
+streams-ch06-demo:
+	@echo "Running aggregations demo..."
+	cd $(STREAMS_CH06_DIR) && gradle run
+
+streams-ch06-clean:
+	cd $(STREAMS_CH06_DIR) && gradle clean
+
+# Chapter 07: State Stores
+.PHONY: streams-ch07-build streams-ch07-test streams-ch07-demo streams-ch07-clean
+streams-ch07-build:
+	@echo "Building Streams Chapter 07..."
+	cd $(STREAMS_CH07_DIR) && gradle build -x test
+
+streams-ch07-test:
+	@echo "Testing Streams Chapter 07..."
+	cd $(STREAMS_CH07_DIR) && gradle test
+
+streams-ch07-demo:
+	@echo "Running state stores demo..."
+	cd $(STREAMS_CH07_DIR) && gradle run
+
+streams-ch07-clean:
+	cd $(STREAMS_CH07_DIR) && gradle clean
+
+# Chapter 08: Topology
+.PHONY: streams-ch08-build streams-ch08-test streams-ch08-demo streams-ch08-clean
+streams-ch08-build:
+	@echo "Building Streams Chapter 08..."
+	cd $(STREAMS_CH08_DIR) && gradle build -x test
+
+streams-ch08-test:
+	@echo "Testing Streams Chapter 08..."
+	cd $(STREAMS_CH08_DIR) && gradle test
+
+streams-ch08-demo:
+	@echo "Running topology demo..."
+	cd $(STREAMS_CH08_DIR) && gradle run
+
+streams-ch08-clean:
+	cd $(STREAMS_CH08_DIR) && gradle clean
+
+# Chapter 09: Exactly-Once
+.PHONY: streams-ch09-build streams-ch09-test streams-ch09-demo streams-ch09-clean
+streams-ch09-build:
+	@echo "Building Streams Chapter 09..."
+	cd $(STREAMS_CH09_DIR) && gradle build -x test
+
+streams-ch09-test:
+	@echo "Testing Streams Chapter 09..."
+	cd $(STREAMS_CH09_DIR) && gradle test
+
+streams-ch09-demo:
+	@echo "Running EOS demo..."
+	cd $(STREAMS_CH09_DIR) && gradle run
+
+streams-ch09-clean:
+	cd $(STREAMS_CH09_DIR) && gradle clean
+
+# Chapter 10: ksqlDB
+.PHONY: streams-ch10-build streams-ch10-test streams-ch10-demo streams-ch10-clean
+.PHONY: ksqldb-start ksqldb-stop ksqldb-cli
+streams-ch10-build:
+	@echo "Building Streams Chapter 10..."
+	cd $(STREAMS_CH10_DIR) && gradle build -x test
+
+streams-ch10-test:
+	@echo "Testing Streams Chapter 10..."
+	cd $(STREAMS_CH10_DIR) && gradle test
+
+streams-ch10-demo:
+	@echo "Running ksqlDB client demo..."
+	cd $(STREAMS_CH10_DIR) && gradle runKsqlClient
+
+streams-ch10-clean:
+	cd $(STREAMS_CH10_DIR) && gradle clean
+
+ksqldb-start:
+	@echo "Starting ksqlDB server and CLI..."
+	docker-compose -f $(STREAMS_CH10_DIR)/docker-compose-ksqldb.yml up -d
+
+ksqldb-stop:
+	@echo "Stopping ksqlDB..."
+	docker-compose -f $(STREAMS_CH10_DIR)/docker-compose-ksqldb.yml down
+
+ksqldb-cli:
+	@echo "Connecting to ksqlDB CLI..."
+	docker exec -it kafka-tutorials-ksqldb-cli ksql http://ksqldb-server:8088
+
+# Build all streams chapters
+.PHONY: streams-build-all
+streams-build-all:
+	@echo "Building all Streams chapters..."
+	@$(MAKE) streams-ch01-build
+	@$(MAKE) streams-ch02-build
+	@$(MAKE) streams-ch03-build
+	@$(MAKE) streams-ch04-build
+	@$(MAKE) streams-ch05-build
+	@$(MAKE) streams-ch06-build
+	@$(MAKE) streams-ch07-build
+	@$(MAKE) streams-ch08-build
+	@$(MAKE) streams-ch09-build
+	@$(MAKE) streams-ch10-build
+
+# Test all streams chapters
+.PHONY: streams-test-all
+streams-test-all:
+	@echo "Testing all Streams chapters..."
+	@$(MAKE) streams-ch01-test
+	@$(MAKE) streams-ch02-test
+	@$(MAKE) streams-ch03-test
+	@$(MAKE) streams-ch04-test
+	@$(MAKE) streams-ch05-test
+	@$(MAKE) streams-ch06-test
+	@$(MAKE) streams-ch07-test
+	@$(MAKE) streams-ch08-test
+	@$(MAKE) streams-ch09-test
+	@$(MAKE) streams-ch10-test
+
+# Clean all streams chapters
+.PHONY: streams-clean-all
+streams-clean-all:
+	@echo "Cleaning all Streams chapters..."
+	@$(MAKE) streams-ch01-clean
+	@$(MAKE) streams-ch02-clean
+	@$(MAKE) streams-ch03-clean
+	@$(MAKE) streams-ch04-clean
+	@$(MAKE) streams-ch05-clean
+	@$(MAKE) streams-ch06-clean
+	@$(MAKE) streams-ch07-clean
+	@$(MAKE) streams-ch08-clean
+	@$(MAKE) streams-ch09-clean
+	@$(MAKE) streams-ch10-clean
+
 # Apache Kafka targets (pure Apache, not Confluent)
 .PHONY: kafka-apache-start
 kafka-apache-start:
@@ -621,6 +877,26 @@ help:
 	@echo "  make test-adv-ch02               - Test performance & throughput"
 	@echo "  make test-adv-ch03               - Test keys, partitioning & ordering"
 	@echo "  make test-adv-ch07               - Test circuit breaker pattern"
+	@echo ""
+	@echo "🌊 Kafka Streams Targets:"
+	@echo "  make streams-build-all           - Build all Streams chapters"
+	@echo "  make streams-test-all            - Test all Streams chapters"
+	@echo "  make streams-clean-all           - Clean all Streams chapters"
+	@echo ""
+	@echo "  make streams-ch01-demo           - Ch 01: Word Count demo"
+	@echo "  make streams-ch02-filter         - Ch 02: Filter/Map demo"
+	@echo "  make streams-ch03-demo           - Ch 03: KTable demo"
+	@echo "  make streams-ch04-stream         - Ch 04: Stream-Stream Join demo"
+	@echo "  make streams-ch05-demo           - Ch 05: Windowing demo"
+	@echo "  make streams-ch06-demo           - Ch 06: Aggregations demo"
+	@echo "  make streams-ch07-demo           - Ch 07: State Stores demo"
+	@echo "  make streams-ch08-demo           - Ch 08: Topology demo"
+	@echo "  make streams-ch09-demo           - Ch 09: Exactly-Once demo"
+	@echo "  make streams-ch10-demo           - Ch 10: ksqlDB client demo"
+	@echo ""
+	@echo "  make ksqldb-start                - Start ksqlDB server"
+	@echo "  make ksqldb-cli                  - Connect to ksqlDB CLI"
+	@echo "  make ksqldb-stop                 - Stop ksqlDB"
 	@echo ""
 	@echo "🛠️  Utility Targets:"
 	@echo "  make test-connection             - Test Kafka connection"
