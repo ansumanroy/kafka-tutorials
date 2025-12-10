@@ -5,6 +5,7 @@ JAVA_ADV_PERFORMANCE_DIR = java/adv_chapter_02_performance
 JAVA_ADV_PARTITIONING_DIR = java/adv_chapter_03_partitioning
 JAVA_ADV_SERIALIZATION_DIR = java/adv_chapter_04_serialization
 JAVA_ADV_ERROR_HANDLING_DIR = java/adv_chapter_05_error_handling
+JAVA_ADV_CIRCUIT_BREAKER_DIR = java/adv_chapter_07_circuit_breaker
 
 # Default target when running 'make' without arguments
 .DEFAULT_GOAL := help
@@ -226,6 +227,37 @@ java-errorhandling-metrics-tests:
 java-errorhandling-clean:
 	@echo "Cleaning Java error handling build artifacts..."
 	cd $(JAVA_ADV_ERROR_HANDLING_DIR) && gradle clean
+
+# Chapter 07: Circuit Breaker Pattern
+.PHONY: java-circuitbreaker-build
+java-circuitbreaker-build:
+	@echo "Building Java circuit breaker tests..."
+	cd $(JAVA_ADV_CIRCUIT_BREAKER_DIR) && gradle build -x test
+
+.PHONY: java-circuitbreaker-test
+java-circuitbreaker-test:
+	@echo "Running all Java circuit breaker tests..."
+	@if [ ! -f infra/env.local ]; then \
+		echo "Creating env.local..."; \
+		cp infra/env-example.local infra/env.local; \
+	fi
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_CIRCUIT_BREAKER_DIR) && gradle test'
+
+.PHONY: java-circuitbreaker-demo
+java-circuitbreaker-demo:
+	@echo "Running Java circuit breaker demonstration..."
+	@bash -c 'source infra/env.local && cd $(JAVA_ADV_CIRCUIT_BREAKER_DIR) && gradle runCircuitBreakerDemo'
+
+.PHONY: java-circuitbreaker-clean
+java-circuitbreaker-clean:
+	@echo "Cleaning Java circuit breaker build artifacts..."
+	cd $(JAVA_ADV_CIRCUIT_BREAKER_DIR) && gradle clean
+
+# Bash Chapter 07: Circuit Breaker
+.PHONY: test-adv-ch07
+test-adv-ch07:
+	@echo "Testing Advanced Chapter 07: Circuit Breaker Pattern"
+	@bash -c 'source infra/env.local && bash bash/chapters/adv_chapter_07_circuit_breaker/demo_circuit_breaker.sh'
 
 # ==========================================
 # Kafka Cluster Management (Docker)
@@ -577,6 +609,18 @@ help:
 	@echo "  make java-errorhandling-dlq-tests      - Run DLQ tests"
 	@echo "  make java-errorhandling-metrics-tests  - Run metrics tests"
 	@echo "  make java-errorhandling-clean    - Clean error handling build artifacts"
+	@echo ""
+	@echo "☕ Java Targets (Chapter 07 - Circuit Breaker):"
+	@echo "  make java-circuitbreaker-build   - Build Java circuit breaker tests"
+	@echo "  make java-circuitbreaker-test    - Run all Java circuit breaker tests"
+	@echo "  make java-circuitbreaker-demo    - Run circuit breaker demonstration"
+	@echo "  make java-circuitbreaker-clean   - Clean circuit breaker build artifacts"
+	@echo ""
+	@echo "🐚 Bash Advanced Chapter Tests:"
+	@echo "  make test-adv-ch01               - Test reliability & delivery guarantees"
+	@echo "  make test-adv-ch02               - Test performance & throughput"
+	@echo "  make test-adv-ch03               - Test keys, partitioning & ordering"
+	@echo "  make test-adv-ch07               - Test circuit breaker pattern"
 	@echo ""
 	@echo "🛠️  Utility Targets:"
 	@echo "  make test-connection             - Test Kafka connection"

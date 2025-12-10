@@ -1193,6 +1193,354 @@ make java-performance-test
 
 ---
 
+# Advanced Chapter A07: Circuit Breaker Pattern
+
+**What You'll Learn:**
+- ✅ Protect against cascading failures
+- ✅ Fail fast pattern
+- ✅ Automatic recovery
+- ✅ Graceful degradation
+
+```mermaid
+stateDiagram-v2
+    [*] --> CLOSED
+    CLOSED --> OPEN: Failure threshold (5)
+    OPEN --> HALF_OPEN: Timeout (60s)
+    HALF_OPEN --> CLOSED: Success threshold (2)
+    HALF_OPEN --> OPEN: Any failure
+    
+    note right of CLOSED
+        Normal operation
+        Requests pass through
+        Count failures
+    end note
+    
+    note right of OPEN
+        Reject all requests
+        Fail fast (instant)
+        Wait for timeout
+    end note
+    
+    note right of HALF_OPEN
+        Test recovery
+        Limited requests
+        Monitor success
+    end note
+```
+
+---
+
+# Circuit Breaker Flow
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant CB as Circuit Breaker
+    participant Kafka
+    
+    Note over CB: State: CLOSED
+    App->>CB: Request 1-4
+    CB->>Kafka: Allow
+    Kafka->>CB: Success ✅
+    
+    Note over Kafka: Kafka goes down!
+    App->>CB: Request 5-9
+    CB->>Kafka: Allow
+    Kafka--xCB: Timeout ❌
+    CB->>CB: Count failures (5)
+    
+    Note over CB: State: OPEN
+    App->>CB: Request 10-100
+    CB--xApp: REJECTED 🔴
+    Note over CB: No Kafka call!
+    
+    Note over CB: Wait 60s...
+    Note over CB: State: HALF_OPEN
+    App->>CB: Test request
+    CB->>Kafka: Allow
+    Kafka->>CB: Success ✅
+    CB->>CB: Success count (2)
+    
+    Note over CB: State: CLOSED
+```
+
+---
+
+# Problem: Without Circuit Breaker
+
+**Scenario:** Kafka is down
+
+```bash
+# 100 requests, each waits for 30s timeout
+for i in {1..100}; do
+  kafka-console-producer.sh ...
+  # Each request: 30s timeout ❌
+done
+
+# Total time: 100 × 30s = 50 MINUTES! 😱
+```
+
+**Problems:**
+- All threads blocked
+- Resources exhausted
+- System unresponsive
+- Poor user experience
+- Cascading failures
+
+---
+
+# Solution: With Circuit Breaker
+
+**Scenario:** Kafka is down
+
+```bash
+# Circuit breaker protects
+for i in {1..100}; do
+  if circuit_breaker_allow_request; then
+    kafka-console-producer.sh ...
+  else
+    echo "REJECTED (instant!)"
+  fi
+done
+
+# First 5 fail: 5 × 30s = 2.5 minutes
+# Next 95 rejected: instant (< 100ms)
+# Total time: ~3 MINUTES vs 50 MINUTES
+
+# Time Saved: 47 minutes (94% faster!) ⚡
+```
+
+---
+
+# Circuit Breaker States
+
+<div class="columns">
+<div>
+
+### CLOSED (Normal)
+```
+┌─────────────┐
+│ ✅ Allow    │
+│ 📊 Count    │
+│ 🔄 Monitor  │
+└─────────────┘
+```
+- All requests pass
+- Count failures
+- Open on threshold
+
+### OPEN (Failed)
+```
+┌─────────────┐
+│ ❌ Reject   │
+│ ⚡ Instant  │
+│ ⏱️  Timeout │
+└─────────────┘
+```
+- Reject all requests
+- Save resources
+- Wait for recovery
+
+</div>
+<div>
+
+### HALF_OPEN (Testing)
+```
+┌─────────────┐
+│ 🔍 Test     │
+│ 📊 Monitor  │
+│ 🔄 Decide   │
+└─────────────┘
+```
+- Allow limited requests
+- Test if recovered
+- Close or reopen
+
+### Time Savings
+```
+Without CB:
+█████████████████████ 50 min
+
+With CB:
+███ 3 min
+
+94% faster! ⚡
+```
+
+</div>
+</div>
+
+---
+
+# Java Implementation
+
+```java
+// 1. Configure circuit breaker
+CircuitBreakerConfig config = CircuitBreakerConfig.builder()
+    .failureThreshold(5)           // Open after 5 failures
+    .successThreshold(2)           // Close after 2 successes
+    .timeout(Duration.ofSeconds(60)) // Try half-open after 60s
+    .build();
+
+// 2. Create producer with circuit breaker
+CircuitBreakerProducer<String, String> producer = 
+    new CircuitBreakerProducer<>(producerProps, config);
+
+// 3. Send with protection
+try {
+    RecordMetadata metadata = producer.sendWithCircuitBreaker(record);
+    System.out.println("✅ Success");
+} catch (CircuitBreakerException e) {
+    System.out.println("🔴 REJECTED - Circuit is " + e.getState());
+    // Use fallback strategy
+} catch (ExecutionException e) {
+    System.out.println("❌ Send failed");
+}
+
+// 4. Metrics and close
+producer.printMetrics();
+producer.close();
+```
+
+---
+
+# Bash Implementation
+
+```bash
+# Source circuit breaker library
+source circuit_breaker.sh
+init_circuit_breaker
+
+# Send with circuit breaker
+send_message() {
+  if circuit_breaker_allow_request; then
+    if kafka-console-producer.sh ...; then
+      circuit_breaker_record_success
+      echo "✅ Success"
+    else
+      circuit_breaker_record_failure
+      echo "❌ Failed"
+    fi
+  else
+    echo "🔴 REJECTED - Circuit is OPEN"
+    # Fail fast!
+  fi
+}
+
+# Demo
+for i in {1..100}; do
+  send_message "message-$i"
+  circuit_breaker_status
+done
+```
+
+---
+
+# Fallback Strategies
+
+```java
+try {
+    producer.sendWithCircuitBreaker(record);
+    
+} catch (CircuitBreakerException e) {
+    // Circuit is open - use fallback
+    
+    if (e.getState() == CircuitBreakerState.OPEN) {
+        // Strategy 1: Queue for later
+        messageQueue.offer(record);
+        
+        // Strategy 2: Send to backup
+        backupProducer.send(record);
+        
+        // Strategy 3: Cache locally
+        localCache.put(record.key(), record.value());
+        
+        // Strategy 4: Return error with retry
+        return Response.status(503)
+            .header("Retry-After", "60")
+            .entity("Service temporarily unavailable")
+            .build();
+    }
+}
+```
+
+---
+
+# Metrics & Monitoring
+
+```java
+CircuitBreakerMetrics metrics = producer.getMetrics();
+
+// Print summary
+metrics.printSummary();
+```
+
+**Output:**
+```
+=== Circuit Breaker Metrics ===
+Total Allowed:      85
+Total Rejected:     15
+Total Success:      80
+Total Failure:      5
+Success Rate:       94.1%
+Avg Operation Time: 12.45 ms
+Time Saved:         75,000 ms (75.0 seconds)
+================================
+
+Circuit Breaker Status:
+  State: CLOSED
+  Failure Count: 0
+  Success Count: 0
+```
+
+---
+
+# Configuration Guidelines
+
+| System Type | Failure Threshold | Timeout | Success Threshold | Why |
+|-------------|-------------------|---------|-------------------|-----|
+| **High Traffic** | 10 | 30s | 5 | More tolerance |
+| **Critical** | 3 | 120s | 10 | Fail fast, careful recovery |
+| **Unstable Network** | 5 | 60s | 3 | Balanced |
+| **Development** | 2 | 10s | 1 | Fast feedback |
+
+**Tuning Tips:**
+- **Lower threshold** = Fail faster
+- **Higher timeout** = More time to recover
+- **Higher success threshold** = More confidence before closing
+
+---
+
+# Use Cases
+
+### 1. Kafka Cluster Outage
+```
+Kafka down → Circuit opens → Fast rejection
+           → Kafka recovers → Circuit closes
+```
+
+### 2. Network Partition
+```
+Network issue → Circuit opens → System stays responsive
+              → Network fixed → Automatic recovery
+```
+
+### 3. Broker Overload
+```
+Slow responses → Circuit gives time to recover
+               → Prevents adding more load
+               → System stabilizes
+```
+
+### 4. Deployment/Maintenance
+```
+Planned downtime → Circuit handles gracefully
+                 → Fallback to cache/backup
+                 → Automatic resume after
+```
+
+---
+
 # Demo Time! 🎯
 
 **Let's see it in action:**
@@ -1204,11 +1552,16 @@ make java-performance-test
 5. **View Metrics and Lag**
 6. **Simulate Failures**
 7. **Show DLQ in Action**
+8. **Demo Circuit Breaker** ⚡
 
 ```bash
 # Follow along with the demo scripts
 cd kafka-tutorials
 make setup-and-test
+
+# Test circuit breaker
+make test-adv-ch07
+make java-circuitbreaker-demo
 ```
 
 ---
@@ -1233,6 +1586,7 @@ make setup-and-test
 - Start simple, iterate to production
 - Monitor everything
 - Test failure scenarios
+- **Use circuit breakers for resilience!**
 - Read the docs
 
 **Kafka is powerful when done right!**
