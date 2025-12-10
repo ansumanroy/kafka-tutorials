@@ -1,0 +1,450 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EC2 Image Builder Pipeline for Kafka Development Environment on Amazon Linux 2'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where the Image Builder instances will run
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet ID for the Image Builder instances (should have internet access)
+
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group ID for the Image Builder instances
+
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    Description: Instance type for building the AMI
+    AllowedValues:
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - m5.large
+      - m5.xlarge
+
+  TargetRegions:
+    Type: CommaDelimitedList
+    Default: us-east-1
+    Description: Comma-separated list of regions to distribute the AMI to
+
+  NotificationEmail:
+    Type: String
+    Default: ''
+    Description: (Optional) Email address for build notifications
+
+  BaseImageId:
+    Type: String
+    Default: ami-0c02fb55b7c22fdef
+    Description: Amazon Linux 2 base AMI ID (update for your region if needed)
+
+  ComponentVersion:
+    Type: String
+    Default: '1.0.0'
+    Description: Version number for the Image Builder component
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, '']]
+
+Resources:
+  # SNS Topic for build notifications
+  ImageBuilderNotificationTopic:
+    Type: AWS::SNS::Topic
+    Condition: HasNotificationEmail
+    Properties:
+      TopicName: !Sub '${AWS::StackName}-notifications'
+      DisplayName: Image Builder Build Notifications
+      Subscription:
+        - Endpoint: !Ref NotificationEmail
+          Protocol: email
+
+  # IAM Role for EC2 Image Builder
+  ImageBuilderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-ImageBuilderRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: ImageBuilderS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - arn:aws:s3:::ec2imagebuilder*
+                  - arn:aws:s3:::ec2imagebuilder*/*
+        - PolicyName: ImageBuilderLogsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/imagebuilder/*'
+
+  # Instance Profile
+  ImageBuilderInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub '${AWS::StackName}-InstanceProfile'
+      Roles:
+        - !Ref ImageBuilderRole
+
+  # Image Builder Component
+  KafkaDevComponent:
+    Type: AWS::ImageBuilder::Component
+    Properties:
+      Name: !Sub '${AWS::StackName}-KafkaDevComponent'
+      Description: Install Kafka tools, Python3, AWS CLI v2, Docker, and Kafka UI
+      Platform: Linux
+      Version: !Ref ComponentVersion
+      Uri: !Sub 's3://${ComponentBucket}/${ComponentKey}'
+      SupportedOsVersions:
+        - Amazon Linux 2
+      Tags:
+        Name: !Sub '${AWS::StackName}-KafkaDevComponent'
+        Environment: Development
+
+  # S3 Bucket for Component (if using S3)
+  ComponentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-components-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-components'
+
+  # Alternative: Inline Component (simpler approach)
+  KafkaDevComponentInline:
+    Type: AWS::ImageBuilder::Component
+    Properties:
+      Name: !Sub '${AWS::StackName}-KafkaDevComponent'
+      Description: Install Kafka tools, Python3, AWS CLI v2, Docker, and Kafka UI
+      Platform: Linux
+      Version: !Ref ComponentVersion
+      Data: |
+        name: KafkaDevEnvironment
+        description: Install Kafka tools, Python3, AWS CLI v2, Docker, and Kafka UI on Amazon Linux 2
+        schemaVersion: 1.0
+
+        phases:
+          - name: build
+            steps:
+              - name: UpdateSystem
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Updating system packages..."
+                    - yum update -y
+                    - yum install -y wget tar gzip unzip
+
+              - name: InstallPython3
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Installing Python 3..."
+                    - yum install -y python3 python3-pip
+                    - python3 --version
+
+              - name: InstallAWSCLIv2
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Installing AWS CLI v2..."
+                    - cd /tmp
+                    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    - unzip -q awscliv2.zip
+                    - ./aws/install
+                    - /usr/local/bin/aws --version
+                    - rm -rf awscliv2.zip aws
+
+              - name: InstallJava
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Installing Java 11..."
+                    - yum install -y java-11-amazon-corretto-headless
+                    - java -version
+
+              - name: InstallDocker
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Installing Docker..."
+                    - yum install -y docker
+                    - systemctl enable docker
+                    - systemctl start docker
+                    - usermod -aG docker ec2-user
+                    - docker --version
+
+              - name: InstallDockerCompose
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Installing Docker Compose v2..."
+                    - mkdir -p /usr/local/lib/docker/cli-plugins
+                    - COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+                    - curl -SL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
+                    - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+                    - ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+                    - docker-compose --version
+
+              - name: InstallKafka
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Installing Apache Kafka..."
+                    - cd /tmp
+                    - KAFKA_VERSION=$(curl -s https://downloads.apache.org/kafka/ | grep -oP 'kafka_[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1 | cut -d'_' -f2)
+                    - SCALA_VERSION="2.13"
+                    - wget -q "https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+                    - mkdir -p /opt/kafka
+                    - tar -xzf "kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz" -C /opt/kafka
+                    - mv /opt/kafka/kafka_${SCALA_VERSION}-${KAFKA_VERSION} /opt/kafka/kafka_${KAFKA_VERSION}
+                    - ln -sf /opt/kafka/kafka_${KAFKA_VERSION} /opt/kafka/current
+                    - rm -f "kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+                    - chown -R ec2-user:ec2-user /opt/kafka
+
+              - name: ConfigureKafkaPath
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Configuring Kafka PATH..."
+                    - |
+                      cat > /etc/profile.d/kafka.sh << 'EOF'
+                      export KAFKA_HOME=/opt/kafka/current
+                      export PATH=$PATH:$KAFKA_HOME/bin
+                      EOF
+                    - chmod +x /etc/profile.d/kafka.sh
+
+              - name: SetupKafkaUI
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Setting up Kafka UI..."
+                    - mkdir -p /opt/kafka-ui
+                    - |
+                      cat > /opt/kafka-ui/docker-compose.yml << 'EOF'
+                      version: '3.8'
+                      services:
+                        kafka-ui:
+                          image: provectuslabs/kafka-ui:latest
+                          container_name: kafka-ui
+                          ports:
+                            - "8080:8080"
+                          environment:
+                            - DYNAMIC_CONFIG_ENABLED=true
+                          restart: unless-stopped
+                      EOF
+                    - chown -R ec2-user:ec2-user /opt/kafka-ui
+
+              - name: CreateKafkaUIService
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - echo "Creating Kafka UI systemd service..."
+                    - |
+                      cat > /etc/systemd/system/kafka-ui.service << 'EOF'
+                      [Unit]
+                      Description=Kafka UI Docker Container
+                      Requires=docker.service
+                      After=docker.service
+
+                      [Service]
+                      Type=oneshot
+                      RemainAfterExit=yes
+                      WorkingDirectory=/opt/kafka-ui
+                      ExecStart=/usr/local/bin/docker-compose up -d
+                      ExecStop=/usr/local/bin/docker-compose down
+                      User=root
+
+                      [Install]
+                      WantedBy=multi-user.target
+                      EOF
+                    - systemctl daemon-reload
+                    - systemctl enable kafka-ui.service
+
+          - name: test
+            steps:
+              - name: TestInstallations
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - python3 --version
+                    - /usr/local/bin/aws --version
+                    - docker --version
+                    - docker-compose --version
+                    - java -version
+                    - source /etc/profile.d/kafka.sh && /opt/kafka/current/bin/kafka-topics.sh --version
+
+          - name: validate
+            steps:
+              - name: ValidateAll
+                action: ExecuteBash
+                inputs:
+                  commands:
+                    - test -x /usr/bin/python3 && echo "✓ Python3"
+                    - test -x /usr/local/bin/aws && echo "✓ AWS CLI"
+                    - test -x /usr/bin/docker && echo "✓ Docker"
+                    - test -x /opt/kafka/current/bin/kafka-topics.sh && echo "✓ Kafka"
+                    - systemctl is-enabled docker && echo "✓ Docker enabled"
+                    - systemctl is-enabled kafka-ui && echo "✓ Kafka UI enabled"
+      SupportedOsVersions:
+        - Amazon Linux 2
+      Tags:
+        Name: !Sub '${AWS::StackName}-KafkaDevComponent'
+
+  # Image Recipe
+  KafkaDevImageRecipe:
+    Type: AWS::ImageBuilder::ImageRecipe
+    Properties:
+      Name: !Sub '${AWS::StackName}-Recipe'
+      Description: Kafka Development Environment Recipe
+      Version: !Ref ComponentVersion
+      ParentImage: !Ref BaseImageId
+      Components:
+        - ComponentArn: !GetAtt KafkaDevComponentInline.Arn
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+            DeleteOnTermination: true
+            Encrypted: true
+      Tags:
+        Name: !Sub '${AWS::StackName}-Recipe'
+        Environment: Development
+
+  # Infrastructure Configuration
+  ImageBuilderInfrastructureConfig:
+    Type: AWS::ImageBuilder::InfrastructureConfiguration
+    Properties:
+      Name: !Sub '${AWS::StackName}-Infrastructure'
+      Description: Infrastructure configuration for Kafka Dev Image Builder
+      InstanceProfileName: !Ref ImageBuilderInstanceProfile
+      InstanceTypes:
+        - !Ref InstanceType
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref SecurityGroupId
+      TerminateInstanceOnFailure: true
+      SnsTopicArn: !If 
+        - HasNotificationEmail
+        - !Ref ImageBuilderNotificationTopic
+        - !Ref AWS::NoValue
+      Logging:
+        S3Logs:
+          S3BucketName: !Ref ComponentBucket
+          S3KeyPrefix: logs/
+      Tags:
+        Name: !Sub '${AWS::StackName}-Infrastructure'
+
+  # Distribution Configuration
+  ImageBuilderDistributionConfig:
+    Type: AWS::ImageBuilder::DistributionConfiguration
+    Properties:
+      Name: !Sub '${AWS::StackName}-Distribution'
+      Description: Distribution configuration for Kafka Dev AMI
+      Distributions:
+        - Region: !Ref AWS::Region
+          AmiDistributionConfiguration:
+            Name: !Sub 'kafka-dev-{{ imagebuilder:buildDate }}'
+            Description: Kafka Development Environment AMI
+            AmiTags:
+              Name: !Sub '${AWS::StackName}-AMI'
+              Environment: Development
+              BuildDate: '{{ imagebuilder:buildDate }}'
+              SourceRecipe: !Sub '${AWS::StackName}-Recipe'
+            LaunchPermissionConfiguration:
+              UserGroups: []
+              UserIds: []
+      Tags:
+        Name: !Sub '${AWS::StackName}-Distribution'
+
+  # Image Pipeline
+  KafkaDevImagePipeline:
+    Type: AWS::ImageBuilder::ImagePipeline
+    Properties:
+      Name: !Sub '${AWS::StackName}-Pipeline'
+      Description: Automated pipeline for building Kafka Dev AMIs
+      ImageRecipeArn: !GetAtt KafkaDevImageRecipe.Arn
+      InfrastructureConfigurationArn: !GetAtt ImageBuilderInfrastructureConfig.Arn
+      DistributionConfigurationArn: !GetAtt ImageBuilderDistributionConfig.Arn
+      Status: ENABLED
+      EnhancedImageMetadataEnabled: true
+      Tags:
+        Name: !Sub '${AWS::StackName}-Pipeline'
+        Environment: Development
+
+Outputs:
+  ImagePipelineArn:
+    Description: ARN of the Image Builder Pipeline
+    Value: !GetAtt KafkaDevImagePipeline.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-PipelineArn'
+
+  ComponentArn:
+    Description: ARN of the Image Builder Component
+    Value: !GetAtt KafkaDevComponentInline.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ComponentArn'
+
+  ImageRecipeArn:
+    Description: ARN of the Image Recipe
+    Value: !GetAtt KafkaDevImageRecipe.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RecipeArn'
+
+  InfrastructureConfigArn:
+    Description: ARN of the Infrastructure Configuration
+    Value: !GetAtt ImageBuilderInfrastructureConfig.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-InfraConfigArn'
+
+  ComponentBucket:
+    Description: S3 Bucket for Image Builder components and logs
+    Value: !Ref ComponentBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-ComponentBucket'
+
+  NotificationTopic:
+    Condition: HasNotificationEmail
+    Description: SNS Topic for build notifications
+    Value: !Ref ImageBuilderNotificationTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-NotificationTopic'
+
+  StartBuildCommand:
+    Description: AWS CLI command to start an image build
+    Value: !Sub 'aws imagebuilder start-image-pipeline-execution --image-pipeline-arn ${KafkaDevImagePipeline.Arn} --region ${AWS::Region}'

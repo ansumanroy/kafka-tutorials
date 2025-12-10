@@ -9,6 +9,23 @@ The audience is developers comfortable with Linux and the command line but **new
 
 ---
 
+## 🚀 Quick Start (Under 2 Minutes!)
+
+```bash
+# One command to setup everything
+make setup-and-test
+
+# Run your first advanced chapter
+make test-adv-ch01
+
+# Open Kafka UI in browser
+open http://localhost:8080
+```
+
+**👉 See [QUICKSTART.md](QUICKSTART.md) for complete guide with all commands**
+
+---
+
 ## Repository Structure
 
 - `bash/` – Bash-based tutorial chapters (current focus).

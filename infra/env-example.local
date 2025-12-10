@@ -1,6 +1,10 @@
 # Example local Kafka environment configuration (Docker Compose)
 # Copy this file to infra/env.local and adjust if needed.
 
+# Add Kafka CLI wrappers to PATH (for running Kafka commands via Docker)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PATH="${SCRIPT_DIR}/../bin:${PATH}"
+
 # Local bootstrap servers (from docker-compose-full.yml or docker-compose.kafka.yml)
 KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
 

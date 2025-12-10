@@ -1,0 +1,242 @@
+name: KafkaDevEnvironment
+description: Install Kafka tools, Python3, AWS CLI v2, Docker, and Kafka UI on Amazon Linux 2
+schemaVersion: 1.0
+
+phases:
+  - name: build
+    steps:
+      - name: UpdateSystem
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Updating system packages..."
+            - yum update -y
+            - yum install -y wget tar gzip unzip
+
+      - name: InstallPython3
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Installing Python 3..."
+            - yum install -y python3 python3-pip
+            - python3 --version
+            - pip3 --version
+
+      - name: InstallAWSCLIv2
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Installing AWS CLI v2..."
+            - cd /tmp
+            - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            - unzip -q awscliv2.zip
+            - ./aws/install
+            - /usr/local/bin/aws --version
+            - rm -rf awscliv2.zip aws
+
+      - name: InstallJava
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Installing Java 11 (required for Kafka)..."
+            - yum install -y java-11-amazon-corretto-headless
+            - java -version
+
+      - name: InstallDocker
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Installing Docker..."
+            - yum install -y docker
+            - systemctl enable docker
+            - systemctl start docker
+            - usermod -aG docker ec2-user
+            - docker --version
+
+      - name: InstallDockerCompose
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Installing Docker Compose v2..."
+            - mkdir -p /usr/local/lib/docker/cli-plugins
+            - COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d\" -f4)
+            - curl -SL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
+            - chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+            - ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+            - docker-compose --version
+
+      - name: InstallKafka
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Installing Apache Kafka (latest stable)..."
+            - cd /tmp
+            - KAFKA_VERSION=$(curl -s https://downloads.apache.org/kafka/ | grep -oP 'kafka_[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1 | cut -d'_' -f2)
+            - SCALA_VERSION="2.13"
+            - echo "Downloading Kafka ${KAFKA_VERSION}..."
+            - wget -q "https://downloads.apache.org/kafka/${KAFKA_VERSION}/kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+            - mkdir -p /opt/kafka
+            - tar -xzf "kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz" -C /opt/kafka
+            - mv /opt/kafka/kafka_${SCALA_VERSION}-${KAFKA_VERSION} /opt/kafka/kafka_${KAFKA_VERSION}
+            - ln -sf /opt/kafka/kafka_${KAFKA_VERSION} /opt/kafka/current
+            - rm -f "kafka_${SCALA_VERSION}-${KAFKA_VERSION}.tgz"
+            - chown -R ec2-user:ec2-user /opt/kafka
+
+      - name: ConfigureKafkaPath
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Adding Kafka tools to system PATH..."
+            - |
+              cat > /etc/profile.d/kafka.sh << 'EOF'
+              # Kafka environment variables
+              export KAFKA_HOME=/opt/kafka/current
+              export PATH=$PATH:$KAFKA_HOME/bin
+              EOF
+            - chmod +x /etc/profile.d/kafka.sh
+            - source /etc/profile.d/kafka.sh
+
+      - name: SetupKafkaUI
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Setting up Kafka UI..."
+            - mkdir -p /opt/kafka-ui
+            - |
+              cat > /opt/kafka-ui/docker-compose.yml << 'EOF'
+              version: '3.8'
+              
+              services:
+                kafka-ui:
+                  image: provectuslabs/kafka-ui:latest
+                  container_name: kafka-ui
+                  ports:
+                    - "8080:8080"
+                  environment:
+                    - DYNAMIC_CONFIG_ENABLED=true
+                  restart: unless-stopped
+              EOF
+            - chown -R ec2-user:ec2-user /opt/kafka-ui
+
+      - name: CreateKafkaUIService
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Creating systemd service for Kafka UI..."
+            - |
+              cat > /etc/systemd/system/kafka-ui.service << 'EOF'
+              [Unit]
+              Description=Kafka UI Docker Container
+              Requires=docker.service
+              After=docker.service
+              
+              [Service]
+              Type=oneshot
+              RemainAfterExit=yes
+              WorkingDirectory=/opt/kafka-ui
+              ExecStart=/usr/local/bin/docker-compose up -d
+              ExecStop=/usr/local/bin/docker-compose down
+              User=root
+              
+              [Install]
+              WantedBy=multi-user.target
+              EOF
+            - systemctl daemon-reload
+            - systemctl enable kafka-ui.service
+            - echo "Kafka UI service created and enabled (will start on boot)"
+
+  - name: test
+    steps:
+      - name: TestPython3
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing Python 3 installation..."
+            - python3 --version
+            - pip3 --version
+
+      - name: TestAWSCLI
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing AWS CLI v2 installation..."
+            - /usr/local/bin/aws --version
+
+      - name: TestDocker
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing Docker installation..."
+            - docker --version
+            - systemctl status docker --no-pager
+
+      - name: TestDockerCompose
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing Docker Compose installation..."
+            - docker-compose --version
+
+      - name: TestJava
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing Java installation..."
+            - java -version
+
+      - name: TestKafkaTools
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing Kafka tools installation..."
+            - source /etc/profile.d/kafka.sh
+            - ls -la /opt/kafka/current/bin/
+            - /opt/kafka/current/bin/kafka-topics.sh --version
+
+      - name: TestKafkaUIConfig
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Testing Kafka UI configuration..."
+            - test -f /opt/kafka-ui/docker-compose.yml && echo "Kafka UI docker-compose.yml exists"
+            - test -f /etc/systemd/system/kafka-ui.service && echo "Kafka UI systemd service exists"
+
+  - name: validate
+    steps:
+      - name: ValidateBinaries
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Validating all binaries are executable..."
+            - test -x /usr/bin/python3 && echo "✓ Python3 executable"
+            - test -x /usr/local/bin/aws && echo "✓ AWS CLI v2 executable"
+            - test -x /usr/bin/docker && echo "✓ Docker executable"
+            - test -x /usr/local/bin/docker-compose && echo "✓ Docker Compose executable"
+            - test -x /opt/kafka/current/bin/kafka-topics.sh && echo "✓ Kafka tools executable"
+
+      - name: ValidateServices
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "Validating systemd services..."
+            - systemctl is-enabled docker && echo "✓ Docker service enabled"
+            - systemctl is-enabled kafka-ui && echo "✓ Kafka UI service enabled"
+
+      - name: ValidationSummary
+        action: ExecuteBash
+        inputs:
+          commands:
+            - echo "================================"
+            - echo "Installation Validation Complete"
+            - echo "================================"
+            - echo "Installed components:"
+            - echo "- Python 3: $(python3 --version 2>&1)"
+            - echo "- AWS CLI: $(/usr/local/bin/aws --version 2>&1)"
+            - echo "- Docker: $(docker --version 2>&1)"
+            - echo "- Docker Compose: $(docker-compose --version 2>&1)"
+            - echo "- Java: $(java -version 2>&1 | head -1)"
+            - source /etc/profile.d/kafka.sh && echo "- Kafka: $(ls /opt/kafka/current/)"
+            - echo "- Kafka UI: Ready (docker-compose at /opt/kafka-ui)"
+            - echo ""
+            - echo "Note: Kafka UI will start automatically on instance boot"
+            - echo "Access Kafka UI at http://<instance-ip>:8080 after launch"
