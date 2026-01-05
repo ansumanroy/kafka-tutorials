@@ -1,0 +1,24 @@
+# Example Terraform variables for Kafka Connect deployment
+# Copy this file to terraform.tfvars and update with your values
+
+aws_region          = "us-east-1"
+msk_cluster_name    = "your-msk-cluster-name"
+msk_cluster_arn     = "arn:aws:kafka:us-east-1:123456789012:cluster/your-cluster/12345678-1234-1234-1234-123456789012-1"
+
+vpc_id              = "vpc-xxxxxxxxxxxxxxxxx"
+subnet_ids          = ["subnet-xxxxxxxxxxxxxxxxx"]
+security_group_ids  = []  # Additional security groups if needed
+
+instance_type       = "t3.medium"
+
+backup_s3_bucket    = "your-backup-bucket-name"
+
+kafka_connect_rest_port = 8083
+kafka_connect_key_name  = ""  # Optional: EC2 key pair name for SSH access
+
+tags = {
+  Project     = "KafkaTutorials"
+  ManagedBy   = "Terraform"
+  Environment = "Production"
+}
+

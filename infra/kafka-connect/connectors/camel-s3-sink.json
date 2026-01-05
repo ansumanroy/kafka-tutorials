@@ -1,0 +1,34 @@
+{
+  "name": "camel-s3-sink-{{TOPIC_NAME}}",
+  "config": {
+    "connector.class": "org.apache.camel.kafkaconnector.s3.CamelS3SinkConnector",
+    "tasks.max": "{{PARTITION_COUNT}}",
+    "topics": "{{TOPIC_NAME}}",
+    "camel.sink.path.bucketNameOrArn": "{{S3_BUCKET}}",
+    "camel.sink.path.keyName": "backups/{{BACKUP_ID}}/topics/{{TOPIC_NAME}}/partition-{{PARTITION}}/messages-{{OFFSET}}.json",
+    "camel.sink.endpoint.accessKey": "{{AWS_ACCESS_KEY}}",
+    "camel.sink.endpoint.secretKey": "{{AWS_SECRET_KEY}}",
+    "camel.sink.endpoint.region": "{{AWS_REGION}}",
+    "camel.sink.endpoint.useDefaultCredentialsProvider": "true",
+    "camel.sink.endpoint.streamingUploadMode": "false",
+    "camel.sink.endpoint.autoCreateBucket": "false",
+    "camel.sink.endpoint.deleteAfterWrite": "false",
+    "camel.sink.endpoint.fileName": "messages-{{OFFSET}}.json",
+    "camel.sink.endpoint.contentType": "application/json",
+    "camel.sink.endpoint.storageClass": "STANDARD",
+    "camel.sink.endpoint.compressionType": "GZIP",
+    "errors.tolerance": "none",
+    "errors.log.enable": "true",
+    "errors.log.include.messages": "true",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "transforms": "AddOffsetMetadata",
+    "transforms.AddOffsetMetadata.type": "org.apache.kafka.connect.transforms.InsertField$Value",
+    "transforms.AddOffsetMetadata.offset.field": "_offset",
+    "transforms.AddOffsetMetadata.partition.field": "_partition",
+    "transforms.AddOffsetMetadata.timestamp.field": "_timestamp"
+  }
+}
+
