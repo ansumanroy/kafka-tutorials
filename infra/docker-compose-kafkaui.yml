@@ -94,31 +94,47 @@ services:
       CDK_CONSOLE-URL: "http://conduktor-console:8080"
   # We use Redpanda to get started with Kafka as it's small and efficient.
   # This is an example here. For production, connect Conduktor to your own Kafka clusters.
+  # 
+  # For EC2 deployment with external access:
+  # - Internal listener on port 9092 (for container-to-container communication)
+  # - External PLAINTEXT listener on port 19092 (for localhost access)
+  # - External SASL_PLAINTEXT listener on port 19093 (for external access with authentication)
+  # - EC2 public IP is auto-detected from metadata service for advertised listeners
   redpanda-0:
     command:
-      - redpanda
-      - start
-      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
-      - --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092
-      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
-      # Address the broker advertises to clients that connect to the HTTP Proxy.
-      - --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082
-      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
-      # Redpanda brokers use the RPC API to communicate with eachother internally.
-      - --rpc-addr redpanda-0:33145
-      - --advertise-rpc-addr redpanda-0:33145
-      - --smp 1
-      - --memory 1G
-      - --mode dev-container
-      - --default-log-level=info
+      - /bin/bash
+      - -c
+      - |
+        # Get EC2 public IP from metadata service (fallback to localhost if not on EC2)
+        EC2_PUBLIC_IP=$$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "localhost")
+        echo "Using EC2 public IP: $$EC2_PUBLIC_IP"
+        exec redpanda start \
+          --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092,sasl://0.0.0.0:19093 \
+          --advertise-kafka-addr internal://redpanda-0:9092,external://localhost:19092,sasl://$$EC2_PUBLIC_IP:19093 \
+          --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082 \
+          --advertise-pandaproxy-addr internal://redpanda-0:8082,external://localhost:18082 \
+          --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081 \
+          --rpc-addr redpanda-0:33145 \
+          --advertise-rpc-addr redpanda-0:33145 \
+          --smp 1 \
+          --memory 1G \
+          --mode dev-container \
+          --default-log-level=info \
+          --sasl-mechanism=plain \
+          --user $$REDPANDA_SASL_USER:$$REDPANDA_SASL_PASSWORD
     image: docker.redpanda.com/redpandadata/redpanda:v24.1.6
     container_name: redpanda-0
+    environment:
+      # SASL credentials (default: admin/admin, can be overridden via env file)
+      REDPANDA_SASL_USER: $${REDPANDA_SASL_USER:-admin}
+      REDPANDA_SASL_PASSWORD: $${REDPANDA_SASL_PASSWORD:-admin}
     volumes:
       - redpanda-0:/var/lib/redpanda/data
     ports:
       - 18081:18081
       - 18082:18082
       - 19092:19092
+      - 19093:19093  # SASL_PLAINTEXT port for external access
       - 19644:9644
     healthcheck:
       test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]

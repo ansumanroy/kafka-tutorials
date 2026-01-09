@@ -6,8 +6,10 @@ This directory contains infrastructure configurations for running Kafka locally 
 
 - `docker-compose-full.yml` - Complete local stack (Kafka + Schema Registry + UI)
 - `docker-compose.kafka.yml` - Simple Kafka + Zookeeper only
+- `docker-compose-kafkaui.yml` - Kafka UI stack with Redpanda (supports EC2 deployment with SASL)
 - `env-example.msk` - Example configuration for AWS MSK
 - `env-example.local` - Example configuration for local Docker Kafka
+- `README-EC2-DEPLOYMENT.md` - Guide for deploying on EC2 with external access
 
 ## Quick Start (Local Development)
 
@@ -81,7 +83,35 @@ All services use **PLAINTEXT** (no authentication) for local development.
 
 ## Management Commands
 
-### Start/Stop
+### For Kafka UI Stack (`docker-compose-kafkaui.yml`)
+
+See the `Makefile` in this directory for convenient commands:
+
+```bash
+cd infra
+
+# Install Docker and Docker Compose
+make install-docker
+
+# Start Kafka UI stack
+make start
+
+# Stop services
+make stop
+
+# View status
+make status
+
+# View logs
+make logs
+
+# Clean everything (requires CONFIRM=true)
+make clean CONFIRM=true
+```
+
+See `infra/Makefile` for all available targets.
+
+### For Full Stack (`docker-compose-full.yml`)
 
 ```bash
 # Start full stack
@@ -277,4 +307,22 @@ Open `http://localhost:8080` in your browser to:
 - **Cluster Info**: View broker health and configurations
 
 Perfect for learning and debugging!
+
+## EC2 Deployment with External Access
+
+For deploying on EC2 with external client access using SASL_PLAINTEXT authentication, see:
+
+**[EC2 Deployment Guide](README-EC2-DEPLOYMENT.md)**
+
+The guide covers:
+- Setting up Kafka with SASL_PLAINTEXT on EC2
+- Auto-detecting EC2 public IP
+- Configuring security groups
+- Client connection examples (Java, Python, CLI)
+- Troubleshooting tips
+
+Quick summary:
+- External access port: `19093` (SASL_PLAINTEXT)
+- Default credentials: `admin/admin` (change in production!)
+- Bootstrap servers: `<EC2_PUBLIC_IP>:19093`
 

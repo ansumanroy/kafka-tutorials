@@ -1,0 +1,16 @@
+# Redpanda SASL PLAIN Users Configuration
+# This file is used by Redpanda to configure SASL users
+# Format: username:password
+#
+# Default credentials (change in production!):
+# Username: admin
+# Password: admin
+
+users:
+  - name: admin
+    password: admin
+    mechanism: SCRAM-SHA-256  # Note: Redpanda uses SCRAM, but we'll configure PLAIN via command line
+
+# Note: For SASL PLAIN mechanism, Redpanda v24+ uses command-line user configuration
+# See docker-compose-kafkaui.yml for actual PLAIN mechanism setup
+
